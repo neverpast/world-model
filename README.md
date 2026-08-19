@@ -11,11 +11,28 @@
 
 ## 系统入口
 
+- [可视化网站](web/index.html)：浏览地图、搜索模型、阅读正文与查看关系网络。
 - [项目宪法](CONSTITUTION.md)：原则、质量标准与维护规则。
 - [模型注册表](_system/MODEL_REGISTRY.md)：所有正式模型的唯一总索引。
 - [连接索引](_system/CONNECTIONS.md)：跨模型支持、冲突与组合关系。
 - [模型模板](_system/templates/model.md)：新增或更新模型时使用。
 - [演化日志](99%20Evolution%20Log/README.md)：记录系统层面的增删改与原因。
+
+## 可视化网站
+
+网站以现有 Markdown 为唯一内容源，不需要数据库或前端框架。每次模型发生变化后重新生成网页数据：
+
+```bash
+npm run build:web
+```
+
+本地预览：
+
+```bash
+npm run dev
+```
+
+然后访问 `http://127.0.0.1:4173`。`web/` 目录是完整静态站点，可直接部署到 GitHub Pages、Cloudflare Pages、Netlify 或任意静态文件服务器。
 
 ## 世界地图
 

@@ -1,0 +1,9 @@
+{
+  "name": "world-models-atlas",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:web": "node web/scripts/build-data.mjs",
+    "dev": "node web/scripts/serve.mjs"
+  }
+}
