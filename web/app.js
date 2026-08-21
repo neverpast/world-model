@@ -32,6 +32,7 @@
   const colorFor = (mapId) => mapColors[mapId] || "#d8f06a";
   const modelById = (id) => data.models.find((model) => model.id === id);
   const mapById = (id) => data.maps.find((map) => map.id === id);
+  const safeImageSource = (value = "") => /^(?:https:\/\/|assets\/)[^\s]+$/i.test(value) ? escapeHtml(value) : "";
 
   function inlineMarkdown(source) {
     const codeTokens = [];
@@ -54,6 +55,7 @@
     return !line.trim()
       || /^#{1,3}\s/.test(line)
       || /^```/.test(line)
+      || /^!\[[^\]]*\]\([^\s)]+(?:\s+"[^"]*")?\)\s*$/.test(line)
       || /^>\s?/.test(line)
       || /^([-*_])(?:\s*\1){2,}\s*$/.test(line)
       || /^\s*[-*+]\s+/.test(line)
@@ -81,6 +83,14 @@
         while (index < lines.length && !/^```/.test(lines[index])) code.push(lines[index++]);
         index += 1;
         html.push(`<pre><code${language ? ` class="language-${escapeHtml(language)}"` : ""}>${escapeHtml(code.join("\n"))}</code></pre>`);
+        continue;
+      }
+
+      const imageMatch = line.match(/^!\[([^\]]*)\]\(([^\s)]+)(?:\s+"([^"]*)")?\)\s*$/);
+      if (imageMatch) {
+        const source = safeImageSource(imageMatch[2]);
+        if (source) html.push(`<div class="model-figure"><img src="${source}" alt="${escapeHtml(imageMatch[1])}" loading="lazy" decoding="async"></div>`);
+        index += 1;
         continue;
       }
 

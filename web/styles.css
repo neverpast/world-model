@@ -280,6 +280,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 .model-article tr:last-child td { border-bottom: 0; }
 .model-article blockquote { margin: 22px 0; padding: 4px 0 4px 20px; color: var(--text-soft); border-left: 2px solid var(--accent); }
 .model-article hr { margin: 40px 0; border: 0; border-top: 1px solid var(--line); }
+.model-figure { margin: 18px 0 12px; padding: clamp(10px, 2vw, 18px); overflow: hidden; background: #f7f4ec; border: 1px solid var(--line); border-radius: 15px; }
+.model-figure img { display: block; width: 100%; height: auto; }
+.model-figure + blockquote { margin-top: 12px; font-size: 12px; }
 
 .article-toc { position: sticky; top: 94px; padding-left: 18px; border-left: 1px solid var(--line); }
 .article-toc h3 { margin: 0 0 13px; color: var(--text-faint); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="460" viewBox="0 0 960 460" role="img" aria-labelledby="title desc">
+  <title id="title">生产可能性边界与供需图是两个不同层次</title>
+  <desc id="desc">左侧以两种产品产量为坐标绘制生产可能性边界，右侧以同一种商品价格和数量为坐标绘制供给需求及均衡点。</desc>
+  <defs>
+    <style>
+      .bg{fill:#f7f4ec}.panel{fill:#fffdf8;stroke:#d8d2c5;stroke-width:1.5}.axis{stroke:#26332f;stroke-width:2}.grid{stroke:#ded8cc;stroke-width:1;stroke-dasharray:4 5}.label{fill:#26332f;font:16px -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC",sans-serif}.small{fill:#66716c;font:13px -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC",sans-serif}.head{fill:#15221e;font:600 19px -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC",sans-serif}.ppf{fill:none;stroke:#d8783f;stroke-width:4;stroke-linecap:round}.supply{fill:none;stroke:#2b8b78;stroke-width:4;stroke-linecap:round}.demand{fill:none;stroke:#d8783f;stroke-width:4;stroke-linecap:round}.dash{stroke:#66716c;stroke-width:1.4;stroke-dasharray:5 5}.point{fill:#15221e}.inside{fill:#2b8b78}.outside{fill:#d8783f}
+    </style>
+  </defs>
+  <rect class="bg" width="960" height="460" rx="18"/>
+  <rect class="panel" x="24" y="24" width="438" height="412" rx="14"/>
+  <rect class="panel" x="498" y="24" width="438" height="412" rx="14"/>
+
+  <text class="head" x="48" y="61">A. 生产能力与机会成本</text>
+  <text class="small" x="48" y="84">两种产品的产量组合</text>
+  <line class="axis" x1="90" y1="374" x2="421" y2="374"/>
+  <line class="axis" x1="90" y1="374" x2="90" y2="112"/>
+  <text class="label" x="319" y="410">产品 A 产量</text>
+  <text class="label" transform="translate(52 250) rotate(-90)">产品 B 产量</text>
+  <path class="ppf" d="M112 132 C180 139 245 169 303 222 C351 266 386 318 407 359"/>
+  <text class="label" x="304" y="188" fill="#d8783f">PPF</text>
+  <circle class="inside" cx="212" cy="286" r="6"/>
+  <text class="small" x="224" y="290">边界内：闲置或低效</text>
+  <circle class="outside" cx="338" cy="145" r="6"/>
+  <text class="small" x="350" y="149">边界外：当前不可达</text>
+  <circle class="point" cx="303" cy="222" r="6"/>
+  <text class="small" x="313" y="242">边界上：生产有效</text>
+
+  <text class="head" x="522" y="61">B. 市场价格与成交数量</text>
+  <text class="small" x="522" y="84">同一种商品的供给与需求</text>
+  <line class="axis" x1="566" y1="374" x2="897" y2="374"/>
+  <line class="axis" x1="566" y1="374" x2="566" y2="112"/>
+  <text class="label" x="785" y="410">商品数量 Q</text>
+  <text class="label" transform="translate(530 250) rotate(-90)">商品价格 P</text>
+  <path class="supply" d="M598 346 C674 304 760 223 867 135"/>
+  <path class="demand" d="M600 136 C691 184 779 270 867 348"/>
+  <text class="label" x="843" y="126" fill="#2b8b78">供给 S</text>
+  <text class="label" x="838" y="369" fill="#d8783f">需求 D</text>
+  <circle class="point" cx="735" cy="242" r="7"/>
+  <line class="dash" x1="566" y1="242" x2="735" y2="242"/>
+  <line class="dash" x1="735" y1="242" x2="735" y2="374"/>
+  <text class="label" x="746" y="234">均衡 E</text>
+  <text class="small" x="541" y="237">P*</text>
+  <text class="small" x="726" y="394">Q*</text>
+</svg>

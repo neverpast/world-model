@@ -48,6 +48,10 @@ function extractSections(body) {
   }));
 }
 
+function rewriteModelAssetPaths(body, mapId) {
+  return body.replace(/(!\[[^\]]*\]\()assets\//g, `$1assets/${mapId}/`);
+}
+
 async function build() {
   const entries = await fs.readdir(rootDir, { withFileTypes: true });
   const mapDirs = entries
@@ -65,6 +69,15 @@ async function build() {
     const files = (await fs.readdir(absoluteDir, { withFileTypes: true }))
       .filter((entry) => entry.isFile() && entry.name.endsWith(".md") && entry.name !== "README.md")
       .sort((a, b) => a.name.localeCompare(b.name));
+
+    const sourceAssets = path.join(absoluteDir, "assets");
+    const targetAssets = path.join(webDir, "assets", number);
+    try {
+      await fs.mkdir(path.dirname(targetAssets), { recursive: true });
+      await fs.cp(sourceAssets, targetAssets, { recursive: true });
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
 
     maps.push({
       id: number,
@@ -87,7 +100,7 @@ async function build() {
         file: `${mapDir.name}/${file.name}`,
         summary: extractSummary(body),
         sections: extractSections(body),
-        body,
+        body: rewriteModelAssetPaths(body, number),
       });
     }
   }
