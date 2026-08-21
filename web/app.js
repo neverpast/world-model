@@ -525,8 +525,8 @@
                 const endpoints = connectionEndpoints(source, target);
                 const midpointX = (source.x + target.x) / 2;
                 const midpointY = (source.y + target.y) / 2;
-                const labelWidth = Math.max(72, [...connection.relation].length * 13 + 24);
-                return `<g class="network-connection"><line x1="${endpoints.start.x}" y1="${endpoints.start.y}" x2="${endpoints.end.x}" y2="${endpoints.end.y}" marker-end="url(#network-arrow)"/><rect x="${midpointX - labelWidth / 2}" y="${midpointY - 14}" width="${labelWidth}" height="28" rx="14"/><text x="${midpointX}" y="${midpointY + 4}" text-anchor="middle">${escapeHtml(connection.relation)}</text></g>`;
+                const labelWidth = Math.max(82, [...connection.relation].length * 14 + 34);
+                return `<g class="network-connection"><line x1="${endpoints.start.x}" y1="${endpoints.start.y}" x2="${endpoints.end.x}" y2="${endpoints.end.y}" marker-end="url(#network-arrow)"/><rect x="${midpointX - labelWidth / 2}" y="${midpointY - 17}" width="${labelWidth}" height="34" rx="17"/><text x="${midpointX}" y="${midpointY + 4}" text-anchor="middle">${escapeHtml(connection.relation)}</text></g>`;
               }).join("")}
             </svg>
             ${data.maps.map((map) => { const position = mapPositions[map.id]; return `<a href="#/map/${map.id}" class="network-node map" style="left:${position.x}px;top:${position.y}px;--node-color:${colorFor(map.id)}"><span>${map.id}</span>${escapeHtml(map.name)}</a>`; }).join("")}
