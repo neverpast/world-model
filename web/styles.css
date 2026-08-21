@@ -292,15 +292,37 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 .empty-state { padding: 70px 30px; color: var(--text-faint); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--radius-lg); text-align: center; }
 .empty-state strong { display: block; margin-bottom: 7px; color: var(--text); font: 500 22px Georgia, "Songti SC", serif; }
 
-.network-stage { position: relative; min-height: 560px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
-.network-stage::before { content: ""; position: absolute; inset: 0; opacity: .45; background-image: radial-gradient(var(--line-strong) 1px, transparent 1px); background-size: 24px 24px; }
-.network-line { position: absolute; height: 1px; background: var(--line-strong); transform-origin: left; }
-.network-node { position: absolute; z-index: 2; width: 180px; padding: 15px; color: var(--text); background: color-mix(in srgb, var(--surface-2) 92%, transparent); border: 1px solid var(--line-strong); border-radius: 14px; backdrop-filter: blur(10px); cursor: pointer; }
-.network-node.map { width: 112px; color: var(--node-color); border-color: color-mix(in srgb, var(--node-color) 35%, transparent); font: 700 11px ui-monospace, monospace; text-align: center; }
-.network-node.model strong { display: block; margin-bottom: 4px; font-family: Georgia, "Songti SC", serif; font-size: 16px; }
-.network-node.model small { color: var(--text-faint); }
+.network-shell { overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.network-toolbar { position: relative; z-index: 5; display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 10px 8px 17px; background: color-mix(in srgb, var(--surface-2) 88%, transparent); border-bottom: 1px solid var(--line); }
+.network-help { color: var(--text-faint); font-size: 10px; letter-spacing: .03em; }
+.network-controls { display: flex; align-items: center; gap: 5px; }
+.network-controls button, .network-controls output { display: grid; min-width: 36px; height: 34px; padding: 0 10px; place-items: center; color: var(--text-soft); background: var(--surface); border: 1px solid var(--line); border-radius: 9px; font: 650 11px ui-sans-serif, system-ui, sans-serif; }
+.network-controls button { cursor: pointer; transition: color .18s, border-color .18s, background .18s; }
+.network-controls button:hover { color: var(--text); background: var(--surface-3); border-color: var(--line-strong); }
+.network-controls output { min-width: 56px; color: var(--accent); font: 700 10px ui-monospace, monospace; }
+.network-viewport { position: relative; min-height: 660px; overflow: hidden; background-image: radial-gradient(color-mix(in srgb, var(--text-faint) 30%, transparent) 1px, transparent 1px); background-size: 24px 24px; cursor: grab; touch-action: none; outline: none; }
+.network-viewport:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+.network-viewport.dragging { cursor: grabbing; user-select: none; }
+.network-canvas { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+.network-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.network-membership-line { opacity: .48; stroke-width: 1.5; stroke-dasharray: 7 9; vector-effect: non-scaling-stroke; }
+.network-connection line { stroke: var(--accent); stroke-width: 3; vector-effect: non-scaling-stroke; }
+.network-connection rect { fill: var(--surface); stroke: color-mix(in srgb, var(--accent) 55%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.network-connection text { fill: var(--text-soft); font: 650 11px ui-sans-serif, system-ui, sans-serif; }
+.network-node { position: absolute; z-index: 2; box-sizing: border-box; color: var(--text); background: color-mix(in srgb, var(--surface-2) 94%, transparent); border: 1px solid var(--line-strong); border-radius: 15px; box-shadow: 0 8px 30px rgba(0, 0, 0, .08); backdrop-filter: blur(10px); cursor: pointer; transform: translate(-50%, -50%); transition: border-color .18s, box-shadow .18s, background .18s; }
+.network-node:hover, .network-node:focus-visible { z-index: 3; background: color-mix(in srgb, var(--surface) 86%, var(--node-color)); border-color: var(--node-color); box-shadow: 0 13px 36px rgba(0, 0, 0, .14); outline: none; }
+.network-node.map { display: flex; width: 150px; min-height: 58px; align-items: center; justify-content: center; gap: 8px; padding: 12px 14px; color: var(--node-color); border-color: color-mix(in srgb, var(--node-color) 42%, transparent); font: 700 12px ui-monospace, monospace; text-align: center; }
+.network-node.map span { opacity: .7; }
+.network-node.model { width: 260px; min-height: 96px; padding: 19px 20px; border-color: color-mix(in srgb, var(--node-color) 70%, transparent); }
+.network-node.model strong { display: block; margin-bottom: 7px; font-family: Georgia, "Songti SC", serif; font-size: 19px; font-weight: 500; line-height: 1.25; }
+.network-node.model small { color: var(--text-faint); font-size: 11px; }
 .network-legend { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 14px; color: var(--text-faint); font-size: 10px; }
 .legend-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; }
+.legend-dot.map-dot { background: var(--text-faint); }
+.legend-dot.model-dot { background: var(--accent); }
+.legend-line { display: inline-block; width: 18px; height: 0; margin: 0 6px 3px 0; border-top: 1px solid var(--text-faint); }
+.legend-line.membership-line { border-top-style: dashed; }
+.legend-line.relation-line { border-color: var(--accent); border-top-width: 2px; }
 
 .search-summary { margin-bottom: 25px; color: var(--text-soft); }
 .search-summary strong { color: var(--accent); }
@@ -347,7 +369,11 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
   .model-detail-header { padding: 25px 21px; }
   .detail-summary { font-size: 13px; }
   .model-article h2 { font-size: 25px; }
-  .network-stage { min-height: 680px; }
+  .network-toolbar { align-items: flex-start; flex-direction: column; padding: 10px; }
+  .network-help { padding-left: 4px; }
+  .network-controls { width: 100%; }
+  .network-controls button, .network-controls output { flex: 1; padding: 0 7px; }
+  .network-viewport { min-height: 620px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

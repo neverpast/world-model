@@ -292,34 +292,250 @@
       </div>`;
   }
 
-  function networkPositions() {
+  const networkCanvasSize = { width: 1800, height: 1100 };
+
+  function buildNetworkLayout() {
+    const center = { x: networkCanvasSize.width / 2, y: networkCanvasSize.height / 2 };
+    const mapPositions = {};
+    const modelPositions = {};
+    const modelGroups = data.models.reduce((groups, model) => {
+      (groups[model.mapId] ||= []).push(model);
+      return groups;
+    }, {});
+    const startAngle = -Math.PI * .82;
+    const angleStep = Math.PI * 2 / data.maps.length;
+
+    data.maps.forEach((map, index) => {
+      const angle = startAngle + index * angleStep;
+      mapPositions[map.id] = {
+        x: center.x + Math.cos(angle) * 760,
+        y: center.y + Math.sin(angle) * 430,
+        angle,
+      };
+
+      const models = modelGroups[map.id] || [];
+      models.forEach((model, modelIndex) => {
+        const layer = Math.floor(modelIndex / 4);
+        const layerStart = layer * 4;
+        const itemsInLayer = Math.min(4, models.length - layerStart);
+        const slot = modelIndex - layerStart;
+        const tangentialOffset = (slot - (itemsInLayer - 1) / 2) * 132;
+        const radialOffset = 255 + layer * 175;
+        const outward = { x: Math.cos(angle), y: Math.sin(angle) };
+        const tangent = { x: -outward.y, y: outward.x };
+        modelPositions[model.id] = {
+          x: mapPositions[map.id].x - outward.x * radialOffset + tangent.x * tangentialOffset,
+          y: mapPositions[map.id].y - outward.y * radialOffset + tangent.y * tangentialOffset,
+        };
+      });
+    });
+
+    const positionedModels = data.models.filter((model) => modelPositions[model.id]);
+    for (let iteration = 0; iteration < 80; iteration += 1) {
+      let moved = false;
+      data.connections.forEach((connection) => {
+        const source = modelPositions[connection.source];
+        const target = modelPositions[connection.target];
+        if (!source || !target) return;
+        const deltaX = target.x - source.x || .1;
+        const deltaY = target.y - source.y || .1;
+        const distance = Math.hypot(deltaX, deltaY);
+        const minimumDistance = 400;
+        if (distance >= minimumDistance) return;
+        const push = (minimumDistance - distance) / 2 + 1;
+        const unitX = deltaX / distance;
+        const unitY = deltaY / distance;
+        source.x -= unitX * push;
+        source.y -= unitY * push;
+        target.x += unitX * push;
+        target.y += unitY * push;
+        moved = true;
+      });
+      for (let first = 0; first < positionedModels.length; first += 1) {
+        for (let second = first + 1; second < positionedModels.length; second += 1) {
+          const a = modelPositions[positionedModels[first].id];
+          const b = modelPositions[positionedModels[second].id];
+          const dx = b.x - a.x || .1;
+          const dy = b.y - a.y || .1;
+          const overlapX = 276 - Math.abs(dx);
+          const overlapY = 116 - Math.abs(dy);
+          if (overlapX <= 0 || overlapY <= 0) continue;
+          moved = true;
+          if (overlapX < overlapY) {
+            const push = overlapX / 2 + 3;
+            a.x -= Math.sign(dx) * push;
+            b.x += Math.sign(dx) * push;
+          } else {
+            const push = overlapY / 2 + 3;
+            a.y -= Math.sign(dy) * push;
+            b.y += Math.sign(dy) * push;
+          }
+        }
+      }
+      if (!moved) break;
+    }
+
+    Object.values(modelPositions).forEach((position) => {
+      position.x = Math.max(155, Math.min(networkCanvasSize.width - 155, position.x));
+      position.y = Math.max(85, Math.min(networkCanvasSize.height - 85, position.y));
+    });
+    return { mapPositions, modelPositions };
+  }
+
+  function initializeNetworkInteractions() {
+    const viewport = document.querySelector("[data-network-viewport]");
+    const canvas = document.querySelector("[data-network-canvas]");
+    const zoomLabel = document.querySelector("[data-network-zoom]");
+    if (!viewport || !canvas || !zoomLabel) return;
+
+    const view = { scale: 1, x: 0, y: 0 };
+    const minScale = .15;
+    const maxScale = 2.5;
+    let dragStart = null;
+    let suppressClick = false;
+
+    const applyView = () => {
+      canvas.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
+      zoomLabel.textContent = `${Math.round(view.scale * 100)}%`;
+    };
+    const fitView = () => {
+      const bounds = viewport.getBoundingClientRect();
+      view.scale = Math.max(minScale, Math.min(1, (bounds.width - 36) / networkCanvasSize.width, (bounds.height - 36) / networkCanvasSize.height));
+      view.x = (bounds.width - networkCanvasSize.width * view.scale) / 2;
+      view.y = (bounds.height - networkCanvasSize.height * view.scale) / 2;
+      applyView();
+    };
+    const zoomAt = (nextScale, clientX, clientY) => {
+      const bounds = viewport.getBoundingClientRect();
+      const pointX = clientX - bounds.left;
+      const pointY = clientY - bounds.top;
+      const worldX = (pointX - view.x) / view.scale;
+      const worldY = (pointY - view.y) / view.scale;
+      view.scale = Math.max(minScale, Math.min(maxScale, nextScale));
+      view.x = pointX - worldX * view.scale;
+      view.y = pointY - worldY * view.scale;
+      applyView();
+    };
+    const zoomFromCenter = (factor) => {
+      const bounds = viewport.getBoundingClientRect();
+      zoomAt(view.scale * factor, bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+    };
+
+    document.querySelectorAll("[data-network-action]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.networkAction;
+        if (action === "zoom-in") zoomFromCenter(1.2);
+        if (action === "zoom-out") zoomFromCenter(1 / 1.2);
+        if (action === "fit") fitView();
+        if (action === "actual-size") {
+          const bounds = viewport.getBoundingClientRect();
+          view.scale = 1;
+          view.x = (bounds.width - networkCanvasSize.width) / 2;
+          view.y = (bounds.height - networkCanvasSize.height) / 2;
+          applyView();
+        }
+      });
+    });
+
+    viewport.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      zoomAt(view.scale * Math.exp(-event.deltaY * .0015), event.clientX, event.clientY);
+    }, { passive: false });
+    viewport.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      dragStart = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, x: view.x, y: view.y, moved: false };
+      viewport.setPointerCapture(event.pointerId);
+      viewport.classList.add("dragging");
+    });
+    viewport.addEventListener("pointermove", (event) => {
+      if (!dragStart || dragStart.pointerId !== event.pointerId) return;
+      const deltaX = event.clientX - dragStart.clientX;
+      const deltaY = event.clientY - dragStart.clientY;
+      if (Math.hypot(deltaX, deltaY) > 5) dragStart.moved = true;
+      view.x = dragStart.x + deltaX;
+      view.y = dragStart.y + deltaY;
+      applyView();
+    });
+    const finishDrag = (event) => {
+      if (!dragStart || dragStart.pointerId !== event.pointerId) return;
+      suppressClick = dragStart.moved;
+      dragStart = null;
+      viewport.classList.remove("dragging");
+      viewport.releasePointerCapture(event.pointerId);
+    };
+    viewport.addEventListener("pointerup", finishDrag);
+    viewport.addEventListener("pointercancel", finishDrag);
+    viewport.addEventListener("click", (event) => {
+      if (!suppressClick) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClick = false;
+    }, true);
+    viewport.addEventListener("keydown", (event) => {
+      if (["+", "="].includes(event.key)) { event.preventDefault(); zoomFromCenter(1.2); }
+      if (event.key === "-") { event.preventDefault(); zoomFromCenter(1 / 1.2); }
+      if (event.key === "0") { event.preventDefault(); fitView(); }
+      const panStep = 45;
+      if (event.key === "ArrowLeft") { event.preventDefault(); view.x += panStep; applyView(); }
+      if (event.key === "ArrowRight") { event.preventDefault(); view.x -= panStep; applyView(); }
+      if (event.key === "ArrowUp") { event.preventDefault(); view.y += panStep; applyView(); }
+      if (event.key === "ArrowDown") { event.preventDefault(); view.y -= panStep; applyView(); }
+    });
+
+    fitView();
+  }
+
+  function connectionEndpoints(source, target) {
+    const deltaX = target.x - source.x;
+    const deltaY = target.y - source.y;
+    const boundaryScale = Math.min(140 / Math.max(Math.abs(deltaX), .1), 58 / Math.max(Math.abs(deltaY), .1), 1);
     return {
-      "00": [9, 11], "01": [38, 7], "02": [69, 11], "03": [84, 39], "04": [75, 74],
-      "05": [45, 81], "06": [16, 73], "07": [5, 42], "08": [43, 43],
+      start: { x: source.x + deltaX * boundaryScale, y: source.y + deltaY * boundaryScale },
+      end: { x: target.x - deltaX * boundaryScale, y: target.y - deltaY * boundaryScale },
     };
   }
 
   function renderConnections() {
-    const positions = networkPositions();
-    const modelPositions = {};
-    data.models.forEach((model, index) => {
-      const [x, y] = positions[model.mapId] || [50, 50];
-      modelPositions[model.id] = [Math.min(78, x + (index % 2 ? -3 : 2)), Math.min(87, y + (y < 50 ? 16 : -17))];
-    });
+    const { mapPositions, modelPositions } = buildNetworkLayout();
     document.title = "关系网络 · World Models";
     setBreadcrumb([{ label: "世界模型", href: "#/" }, { label: "关系网络" }]);
     setActiveNavigation("connections");
     app.innerHTML = `
       <header class="page-header"><div class="eyebrow">Connection Index</div><h1 class="page-title">关系网络</h1><p class="page-intro">模型只在存在可解释机制时连接。地图归属显示知识的位置，连线表达支持、冲突、约束或组成关系。</p></header>
-      <div class="network-stage">
-        <svg viewBox="0 0 1000 560" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;opacity:.55">
-          ${data.models.map((model) => { const [mx, my] = modelPositions[model.id]; const [x, y] = positions[model.mapId]; return `<line x1="${x * 10 + 56}" y1="${y * 5.6 + 18}" x2="${mx * 10 + 80}" y2="${my * 5.6 + 24}" stroke="${colorFor(model.mapId)}" stroke-width="1" stroke-dasharray="5 7"/>`; }).join("")}
-          ${data.connections.map((connection) => { const source = modelPositions[connection.source]; const target = modelPositions[connection.target]; return source && target ? `<line x1="${source[0] * 10}" y1="${source[1] * 5.6}" x2="${target[0] * 10}" y2="${target[1] * 5.6}" stroke="#d8f06a" stroke-width="2"/>` : ""; }).join("")}
-        </svg>
-        ${data.maps.map((map) => { const [x, y] = positions[map.id]; return `<a href="#/map/${map.id}" class="network-node map" style="left:${x}%;top:${y}%;--node-color:${colorFor(map.id)}">${map.id} ${escapeHtml(map.name)}</a>`; }).join("")}
-        ${data.models.map((model) => { const [x, y] = modelPositions[model.id]; return `<a href="#/model/${model.id}" class="network-node model" style="left:${x}%;top:${y}%;border-color:${colorFor(model.mapId)}"><strong>${escapeHtml(model.title)}</strong><small>${escapeHtml(model.id)} · ${escapeHtml(model.status)}</small></a>`; }).join("")}
+      <div class="network-shell">
+        <div class="network-toolbar" aria-label="关系网络视图控制">
+          <span class="network-help">拖拽平移 · 滚轮缩放 · 方向键移动</span>
+          <div class="network-controls">
+            <button type="button" data-network-action="zoom-out" aria-label="缩小关系网络">−</button>
+            <output data-network-zoom aria-live="polite">100%</output>
+            <button type="button" data-network-action="zoom-in" aria-label="放大关系网络">＋</button>
+            <button type="button" data-network-action="fit">适配</button>
+            <button type="button" data-network-action="actual-size">100%</button>
+          </div>
+        </div>
+        <div class="network-viewport" data-network-viewport tabindex="0" aria-label="可缩放和平移的模型关系网络">
+          <div class="network-canvas" data-network-canvas style="width:${networkCanvasSize.width}px;height:${networkCanvasSize.height}px">
+            <svg class="network-svg" viewBox="0 0 ${networkCanvasSize.width} ${networkCanvasSize.height}" aria-hidden="true">
+              <defs><marker id="network-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 9 4.5 0 9Z" fill="#9fbd22"/></marker></defs>
+              ${data.models.map((model) => { const modelPosition = modelPositions[model.id]; const mapPosition = mapPositions[model.mapId]; return modelPosition && mapPosition ? `<line class="network-membership-line" x1="${mapPosition.x}" y1="${mapPosition.y}" x2="${modelPosition.x}" y2="${modelPosition.y}" stroke="${colorFor(model.mapId)}"/>` : ""; }).join("")}
+              ${data.connections.map((connection) => {
+                const source = modelPositions[connection.source];
+                const target = modelPositions[connection.target];
+                if (!source || !target) return "";
+                const endpoints = connectionEndpoints(source, target);
+                const midpointX = (source.x + target.x) / 2;
+                const midpointY = (source.y + target.y) / 2;
+                const labelWidth = Math.max(72, [...connection.relation].length * 13 + 24);
+                return `<g class="network-connection"><line x1="${endpoints.start.x}" y1="${endpoints.start.y}" x2="${endpoints.end.x}" y2="${endpoints.end.y}" marker-end="url(#network-arrow)"/><rect x="${midpointX - labelWidth / 2}" y="${midpointY - 14}" width="${labelWidth}" height="28" rx="14"/><text x="${midpointX}" y="${midpointY + 4}" text-anchor="middle">${escapeHtml(connection.relation)}</text></g>`;
+              }).join("")}
+            </svg>
+            ${data.maps.map((map) => { const position = mapPositions[map.id]; return `<a href="#/map/${map.id}" class="network-node map" style="left:${position.x}px;top:${position.y}px;--node-color:${colorFor(map.id)}"><span>${map.id}</span>${escapeHtml(map.name)}</a>`; }).join("")}
+            ${data.models.map((model) => { const position = modelPositions[model.id]; return `<a href="#/model/${model.id}" class="network-node model" style="left:${position.x}px;top:${position.y}px;--node-color:${colorFor(model.mapId)}"><strong>${escapeHtml(model.title)}</strong><small>${escapeHtml(model.id)} · ${escapeHtml(model.status)}</small></a>`; }).join("")}
+          </div>
+        </div>
       </div>
-      <div class="network-legend"><span><i class="legend-dot" style="background:var(--text-faint)"></i>领域地图</span><span><i class="legend-dot" style="background:var(--accent)"></i>正式模型</span><span><i class="legend-dot" style="background:var(--warm)"></i>${data.connections.length} 条模型关系</span></div>`;
+      <div class="network-legend"><span><i class="legend-dot map-dot"></i>领域地图</span><span><i class="legend-dot model-dot"></i>正式模型</span><span><i class="legend-line membership-line"></i>地图归属</span><span><i class="legend-line relation-line"></i>${data.connections.length} 条模型关系</span></div>`;
+    requestAnimationFrame(initializeNetworkInteractions);
   }
 
   function renderSearch(query) {
